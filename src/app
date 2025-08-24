@@ -1,0 +1,42 @@
+"""
+Streamlit app for Fake News Detection.
+Run:
+    streamlit run src/app.py -- --model_dir models
+"""
+from __future__ import annotations
+import argparse, os, joblib, sys
+import streamlit as st
+
+def load_model(model_dir: str):
+    model_path = os.path.join(model_dir, "model.joblib")
+    if not os.path.exists(model_path):
+        st.error(f"Model not found at {model_path}. Please train first.")
+        st.stop()
+    return joblib.load(model_path)
+
+def parse_args():
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("--model_dir", default="models")
+    # Workaround to parse args in Streamlit
+    known, _ = ap.parse_known_args()
+    return known
+
+def main():
+    args = parse_args()
+    st.title("📰 Fake News Detector")
+    st.caption("TF‑IDF + LinearSVC (calibrated)")
+    model = load_model(args.model_dir)
+
+    txt = st.text_area("Paste headline or article text:", height=200)
+    if st.button("Classify") and txt.strip():
+        prob_fake = float(model.predict_proba([txt])[0,1])
+        label = "FAKE" if prob_fake >= 0.5 else "REAL"
+        st.metric("Prediction", label)
+        st.write(f"**P(fake)** = {prob_fake:.3f}")
+        st.progress(prob_fake)
+
+    st.divider()
+    st.write("Tip: Train with your dataset via `python src/train.py --data <csv>` then re‑run the app.")
+
+if __name__ == "__main__":
+    main()

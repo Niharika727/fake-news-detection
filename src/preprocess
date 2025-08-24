@@ -1,0 +1,32 @@
+"""
+Text preprocessing and feature pipeline.
+"""
+from __future__ import annotations
+import re
+from typing import Iterable, List
+from sklearn.base import TransformerMixin
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+URL_RE = re.compile(r"https?://\S+|www\.\S+")
+NON_ALPHA_RE = re.compile(r"[^a-zA-Z\s]")
+MULTI_SPACE_RE = re.compile(r"\s+")
+
+def clean_text(text: str) -> str:
+    text = text.lower()
+    text = URL_RE.sub(" ", text)
+    text = NON_ALPHA_RE.sub(" ", text)
+    text = MULTI_SPACE_RE.sub(" ", text).strip()
+    return text
+
+class Cleaner(TransformerMixin):
+    def fit(self, X: Iterable[str], y=None):
+        return self
+    def transform(self, X: Iterable[str]) -> List[str]:
+        return [clean_text(t) for t in X]
+
+def make_vectorizer(max_features: int = 50000, ngram_range=(1,2)) -> TfidfVectorizer:
+    return TfidfVectorizer(
+        max_features=max_features,
+        ngram_range=ngram_range,
+        min_df=2
+    )

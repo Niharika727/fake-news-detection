@@ -1,0 +1,23 @@
+"""
+CLI prediction for a single text.
+"""
+from __future__ import annotations
+import argparse, os, joblib
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model_dir", default="models")
+    ap.add_argument("--text", required=True, help="Article text or headline")
+    args = ap.parse_args()
+
+    model_path = os.path.join(args.model_dir, "model.joblib")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found at {model_path}. Train a model first.")
+    pipe = joblib.load(model_path)
+
+    prob_fake = float(pipe.predict_proba([args.text])[0,1])
+    label = "fake" if prob_fake >= 0.5 else "real"
+    print(f"Prediction: {label} (fake prob={prob_fake:.3f})")
+
+if __name__ == "__main__":
+    main()
